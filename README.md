@@ -2,8 +2,6 @@
 
 **Lovable for onchain mini-games — on Monad.** Type an idea, no matter how weird, and it spins up into a playable mini-game with its own token on Monad testnet. Creators earn through pay-to-play fees and token economies; players earn tokens for their scores.
 
-Ported to Monad from [Gamepad](https://github.com/Ayushjain2205/gamepad) (ETHGlobal, MIT).
-
 ## How it works
 
 1. **Prompt → template.** Your idea is matched against a registry of 10 core game templates (flappy, tap, snake, runner, racer, shooter, memory, sliding puzzle, word guess, catcher).
