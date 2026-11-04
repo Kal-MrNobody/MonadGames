@@ -1,7 +1,7 @@
 import type { GameRecord, GameTemplate } from "./types";
 import { injectBridge } from "./bridge";
 import { matchTemplate } from "./matcher";
-import { getTemplate } from "@/games/registry";
+import { getTemplate, listTemplates } from "@/games/registry";
 
 export const MONAD_PURPLE = "#836EF9";
 export const MONAD_DARK = "#0E0B1A";
@@ -174,48 +174,99 @@ function extractJson(text: string): unknown {
   return undefined;
 }
 
+type ChatProvider = { name: "openai" | "together"; url: string; key: string; model: string };
+
+// OpenAI wins when configured; Together (Qwen) is the fallback; with neither, the heuristic customizer is used.
+export function aiProvider(): ChatProvider | undefined {
+  if (process.env.OPENAI_API_KEY) {
+    return {
+      name: "openai",
+      url: (process.env.OPENAI_BASE_URL || "https://api.openai.com/v1") + "/chat/completions",
+      key: process.env.OPENAI_API_KEY,
+      model: process.env.OPENAI_MODEL || "gpt-5.4-mini",
+    };
+  }
+  if (process.env.TOGETHER_API_KEY) {
+    return {
+      name: "together",
+      url: "https://api.together.xyz/v1/chat/completions",
+      key: process.env.TOGETHER_API_KEY,
+      model: process.env.TOGETHER_MODEL || "Qwen/Qwen2.5-Coder-32B-Instruct",
+    };
+  }
+  return undefined;
+}
+
+async function chatJson(system: string, user: string, timeoutMs = 20000): Promise<unknown> {
+  const p = aiProvider();
+  if (!p) return undefined;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  const isReasoning = p.name === "openai" && /^(gpt-5|o\d)/.test(p.model);
+  const body: Record<string, unknown> = {
+    model: p.model,
+    messages: [
+      { role: "system", content: system },
+      { role: "user", content: user },
+    ],
+    response_format: { type: "json_object" },
+  };
+  if (isReasoning) {
+    body.max_completion_tokens = 2000;
+    body.reasoning_effort = "low";
+  } else {
+    body.temperature = 0.7;
+    body.max_tokens = 800;
+  }
+  try {
+    const res = await fetch(p.url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${p.key}` },
+      body: JSON.stringify(body),
+      signal: ctrl.signal,
+    });
+    if (!res.ok) {
+      console.warn(`[generate] ${p.name} ${res.status}: ${(await res.text()).slice(0, 300)}`);
+      return undefined;
+    }
+    const data = (await res.json()) as { choices?: { message?: { content?: string } }[] };
+    const content = data?.choices?.[0]?.message?.content;
+    return typeof content === "string" ? extractJson(content) : undefined;
+  } catch (e) {
+    console.warn(`[generate] ${p.name} failed: ${(e as Error).message}`);
+    return undefined;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// Ask the model which of the core templates best fits a free-form idea.
+async function aiPickTemplate(prompt: string): Promise<GameTemplate | undefined> {
+  const list = listTemplates()
+    .map((t) => `- ${t.id}: ${t.name} — ${t.description}`)
+    .join("\n");
+  const out = (await chatJson(
+    "You map a game idea to the closest playable mini-game mechanic. Reply with ONLY JSON: {\"templateId\": \"<id>\"}. Pick by core mechanic (how the player interacts), not by theme.",
+    `Templates:\n${list}\n\nIdea: ${prompt}`,
+    12000
+  )) as { templateId?: unknown } | undefined;
+  return typeof out?.templateId === "string" ? getTemplate(out.templateId) : undefined;
+}
+
 async function aiConfig(prompt: string, template: GameTemplate, base: Record<string, unknown>): Promise<Record<string, unknown>> {
-  const key = process.env.TOGETHER_API_KEY;
-  if (!key) return {};
-  const model = process.env.TOGETHER_MODEL || "Qwen/Qwen2.5-Coder-32B-Instruct";
+  if (!aiProvider()) return {};
   const sys =
     "You customize HTML5 mini-game templates. Reply with ONLY a JSON object (no prose, no markdown). " +
     "Use exactly the keys of the provided config (same value types), plus \"title\" (short catchy game title, max 30 chars) " +
     "and \"tokenSymbol\" (3-5 uppercase letters). Theme every value (colors as #RRGGBB hex, emojis, numbers, word lists, subtitle instructions) to the user's idea. " +
-    "Keep numbers within roughly 0.5x-2x of the defaults. Default theme is Monad purple (#836EF9) on dark (#0E0B1A) unless the idea implies otherwise.";
+    "Keep numbers within roughly 0.5x-2x of the defaults. Default theme is neon cyberpunk arcade in Monad purple (#836EF9) on near-black (#0E0B1A) with cyan/magenta accents unless the idea implies otherwise.";
   const user =
     `Game template: ${template.name} — ${template.description}\n` +
     `Default config:\n${JSON.stringify(template.defaultConfig)}\n` +
     `Heuristic hints (may be improved):\n${JSON.stringify(base)}\n` +
     `User idea: ${prompt}`;
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 15000);
-  try {
-    const res = await fetch("https://api.together.xyz/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: "system", content: sys },
-          { role: "user", content: user },
-        ],
-        temperature: 0.7,
-        max_tokens: 800,
-        response_format: { type: "json_object" },
-      }),
-      signal: ctrl.signal,
-    });
-    if (!res.ok) return {};
-    const data = (await res.json()) as { choices?: { message?: { content?: string } }[] };
-    const content = data?.choices?.[0]?.message?.content;
-    if (typeof content !== "string") return {};
-    return sanitizeAiConfig(extractJson(content), template.defaultConfig);
-  } catch {
-    return {};
-  } finally {
-    clearTimeout(timer);
-  }
+  const out = await chatJson(sys, user);
+  return out === undefined ? {} : sanitizeAiConfig(out, template.defaultConfig);
 }
 
 const ADDR = /^0x[0-9a-fA-F]{40}$/;
@@ -254,7 +305,12 @@ export async function generateGame(
   opts: { templateId?: string } = {}
 ): Promise<GameRecord> {
   const forced = opts.templateId ? getTemplate(opts.templateId) : undefined;
-  const template = forced || matchTemplate(prompt).template;
+  let template = forced;
+  if (!template) {
+    const m = matchTemplate(prompt);
+    // A strong keyword hit is trusted; otherwise let the model pick the mechanic.
+    template = (m.score < 3 ? await aiPickTemplate(prompt) : undefined) || m.template;
+  }
   const heur = heuristicConfig(prompt, template);
   let config: Record<string, unknown> = { ...template.defaultConfig, ...heur };
   const ai = await aiConfig(prompt, template, heur);

@@ -5,7 +5,7 @@
 ## How it works
 
 1. **Prompt → template.** Your idea is matched against a registry of 10 core game templates (flappy, tap, snake, runner, racer, shooter, memory, sliding puzzle, word guess, catcher).
-2. **AI customization.** If `TOGETHER_API_KEY` is set, Qwen (via Together AI) themes the template's config (title, colors, emojis, speed, token symbol). Without a key, a heuristic customizer is used, so the app works offline.
+2. **AI customization.** If `OPENAI_API_KEY` is set, OpenAI (`OPENAI_MODEL`, default `gpt-5.4-mini`) picks the best engine for ideas the keyword matcher isn't sure about, then themes the template's config (title, colors, emojis, speed, token symbol). `TOGETHER_API_KEY` (Qwen) is the fallback provider. With no key, a heuristic customizer is used, so the app works offline.
 3. **Sandboxed play.** Games run in an `<iframe sandbox="allow-scripts">` (no same-origin), so a crashing game can't touch the app. Scores leave the sandbox over a `postMessage` bridge (`src/lib/bridge.ts`).
 4. **Onchain economy.** `GameFactory` on Monad deploys an ERC20 per game (1M supply to the creator), handles pay-to-play in MON (90% creator / 10% platform), and mints score rewards to players via a server-side rewarder (`/api/reward`).
 
@@ -22,6 +22,21 @@ creator ─▶ GameFactory.createGame ─▶ GameToken (ERC20)    player ─▶ 
 npm install
 cp .env.sample .env.local   # fill in values
 npm run dev
+```
+
+## Live deployment (Monad testnet, chain 10143)
+
+| Contract | Address |
+|---|---|
+| `GameFactory` | [`0xd639772dCF6bcc924D075dF0E9c66e4ed2De99d4`](https://testnet.monadexplorer.com/address/0xd639772dCF6bcc924D075dF0E9c66e4ed2De99d4) |
+| Rewarder / owner | `0xC07d95248860eD400A3964154e9169903Cbfa8ce` |
+| Demo game token (`demo-flappy`, $FLAP) | [`0xd7D23bF713C3C9473858C182Fc94a75553eB470A`](https://testnet.monadexplorer.com/address/0xd7D23bF713C3C9473858C182Fc94a75553eB470A) |
+
+Full record: `contracts/deployments/monadTestnet.json`. To point the app at it:
+
+```bash
+NEXT_PUBLIC_FACTORY_ADDRESS=0xd639772dCF6bcc924D075dF0E9c66e4ed2De99d4
+REWARDER_PRIVATE_KEY=<deployer key>
 ```
 
 ## Deploy contracts to Monad testnet

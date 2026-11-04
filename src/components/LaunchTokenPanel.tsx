@@ -52,10 +52,13 @@ export function LaunchTokenPanel({ game, onLaunched }: { game: GameRecord; onLau
 
   if (game.tokenAddress) {
     return (
-      <div className="card p-4">
-        <div className="text-sm text-white/50">Token live 🚀</div>
-        <div className="mt-1 text-xl font-bold text-monad-light">${game.tokenSymbol}</div>
-        <a className="text-sm text-white/70 underline" href={EXPLORER.address(game.tokenAddress)} target="_blank" rel="noreferrer">
+      <div className="card-neon p-4">
+        <div className="flex items-center justify-between">
+          <div className="label">Token live</div>
+          <span className="chip border-mint/60 text-mint">onchain</span>
+        </div>
+        <div className="mt-1 font-display text-2xl font-black neon-cyan">${game.tokenSymbol}</div>
+        <a className="font-mono text-xs text-white/60 hover:text-cyan" href={EXPLORER.address(game.tokenAddress)} target="_blank" rel="noreferrer">
           {shortAddr(game.tokenAddress)} ↗
         </a>
         <div className="mt-1 text-xs text-white/50">
@@ -86,16 +89,16 @@ export function LaunchTokenPanel({ game, onLaunched }: { game: GameRecord; onLau
 
   const busy = isPending || confirming || !!status;
   return (
-    <div className="card p-4">
+    <div className="card-neon p-4">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="font-semibold">🪙 Launch your game token</h3>
-        <span className="text-xs text-white/40">ERC20 on Monad</span>
+        <h3 className="font-display text-sm font-bold uppercase tracking-wider">🪙 Launch token</h3>
+        <span className="chip whitespace-nowrap border-monad/60 text-monad-light">ERC20</span>
       </div>
       <div className="grid gap-2 sm:grid-cols-[1fr_120px]">
         <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Token name" maxLength={40} />
         <input className="input uppercase" value={symbol} onChange={(e) => setSymbol(e.target.value.replace(/[^a-zA-Z0-9]/g, "").slice(0, 10))} placeholder="SYMBOL" />
       </div>
-      <label className="mt-2 block text-xs text-white/50">Pay-to-play fee (MON, 0 = free)</label>
+      <label className="label mt-3 block">Pay-to-play fee · MON (0 = free)</label>
       <input className="input mt-1" inputMode="decimal" value={fee} onChange={(e) => setFee(e.target.value)} placeholder="0" />
       <button className="btn-primary mt-3 w-full" onClick={launch} disabled={busy || !FACTORY_ADDRESS}>
         {isPending ? "Confirm in wallet…" : confirming ? "Launching onchain…" : status ? status : "🚀 Launch token"}

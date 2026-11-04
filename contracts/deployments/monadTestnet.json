@@ -1,0 +1,13 @@
+{
+  "factory": "0xd639772dCF6bcc924D075dF0E9c66e4ed2De99d4",
+  "rewarder": "0xC07d95248860eD400A3964154e9169903Cbfa8ce",
+  "chainId": 10143,
+  "deployer": "0xC07d95248860eD400A3964154e9169903Cbfa8ce",
+  "txHash": "0x007c65c5553b82ac897eb70922e30e4df4b6f70fac2da33e37d50696b246ce02",
+  "timestamp": "2026-11-04T10:38:38.717Z",
+  "demoGame": {
+    "gameId": "demo-flappy",
+    "token": "0xd7D23bF713C3C9473858C182Fc94a75553eB470A",
+    "txHash": "0xbaa39b6767a6935fa1a8f6ead35932f7d57f6e49a416f41a3a711953eb82d760"
+  }
+}

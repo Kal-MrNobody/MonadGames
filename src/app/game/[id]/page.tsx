@@ -7,6 +7,7 @@ import { formatEther, formatUnits } from "viem";
 import { api } from "@/lib/api";
 import type { GameRecord } from "@/lib/types";
 import { GameFrame } from "@/components/GameFrame";
+import { GameCabinet } from "@/components/GameCabinet";
 import { RewardToast, type ToastData } from "@/components/RewardToast";
 import { EXPLORER, monadTestnet, shortAddr } from "@/lib/chain";
 import { FACTORY_ADDRESS, gameFactoryAbi, gameTokenAbi } from "@/lib/contracts";
@@ -100,34 +101,34 @@ export default function GamePage() {
     [game, address, refetchBalance]
   );
 
-  if (err) return <div className="card mt-8 p-6 text-center text-red-300">⚠️ {err}</div>;
-  if (!game) return <div className="mx-auto mt-6 aspect-[9/16] max-h-[75vh] w-full max-w-md animate-pulse rounded-2xl bg-panel" />;
+  if (err)
+    return (
+      <div className="card mx-auto mt-10 max-w-md p-8 text-center">
+        <div className="font-pixel text-xs text-pink">GAME OVER</div>
+        <p className="mt-3 text-red-300">{err}</p>
+        <Link href="/" className="btn-ghost mt-5">Back to arcade</Link>
+      </div>
+    );
+  if (!game) return <div className="mx-auto mt-6 aspect-[9/16] max-h-[75vh] w-full max-w-md animate-pulse bg-panel" />;
 
   return (
     <div className="grid gap-6 pt-2 lg:grid-cols-[minmax(0,1fr)_340px]">
       <div>
-        <div className="mx-auto mb-2 flex max-w-md items-center justify-between gap-2">
-          <h1 className="truncate text-lg font-bold">{game.title}</h1>
-          <div className="flex shrink-0 gap-2 text-sm">
-            <span className="rounded-lg bg-white/5 px-2 py-1">Score <b className="text-monad-light">{score}</b></span>
-            <span className="rounded-lg bg-white/5 px-2 py-1">Best <b>{best}</b></span>
-          </div>
-        </div>
-        <div className="mx-auto aspect-[9/16] max-h-[75vh] w-full max-w-md">
+        <GameCabinet title={game.title} score={score} best={best} token={token ? game.tokenSymbol : undefined}>
           {needsPay ? (
-            <div className="card glow grid h-full place-items-center p-6 text-center">
+            <div className="absolute inset-0 grid place-items-center bg-[radial-gradient(circle_at_50%_40%,rgba(131,110,249,.35),transparent_65%)] p-6 text-center">
               <div>
-                <div className="text-6xl">🎟️</div>
-                <h2 className="mt-3 text-xl font-bold">Pay to play</h2>
-                <p className="mt-1 text-white/60">
-                  {formatEther(fee)} MON per session · earn ${game.tokenSymbol} for every point
+                <div className="text-6xl">🪙</div>
+                <div className="mt-4 font-pixel text-[11px] text-amber blink">INSERT COIN</div>
+                <p className="mt-3 text-sm text-white/60">
+                  {formatEther(fee)} MON per run · earn ${game.tokenSymbol} for every point
                 </p>
                 <button className="btn-primary mt-5" onClick={pay} disabled={paying || payConfirming}>
-                  {paying ? "Confirm in wallet…" : payConfirming ? "Confirming…" : `Pay ${formatEther(fee)} MON & play`}
+                  {paying ? "Confirm in wallet…" : payConfirming ? "Confirming…" : `Pay ${formatEther(fee)} MON`}
                 </button>
                 {payHash && (
-                  <a className="mt-2 block text-xs text-monad-light underline" href={EXPLORER.tx(payHash)} target="_blank" rel="noreferrer">
-                    Tx ↗
+                  <a className="mt-3 block font-mono text-xs text-cyan underline" href={EXPLORER.tx(payHash)} target="_blank" rel="noreferrer">
+                    tx ↗
                   </a>
                 )}
               </div>
@@ -135,24 +136,68 @@ export default function GamePage() {
           ) : (
             <GameFrame html={game.html} title={game.title} onScore={setScore} onGameOver={onGameOver} />
           )}
-        </div>
+        </GameCabinet>
       </div>
 
       <aside className="space-y-4">
+        {token ? (
+          <div className="card-neon p-4">
+            <div className="flex items-start justify-between">
+              <div>
+                <div className="label">Game token</div>
+                <div className="mt-1 font-display text-3xl font-black neon-cyan">${game.tokenSymbol}</div>
+              </div>
+              <span className="chip border-mint/60 text-mint">live</span>
+            </div>
+            <a className="font-mono text-xs text-white/50 hover:text-cyan" href={EXPLORER.address(token)} target="_blank" rel="noreferrer">
+              {shortAddr(token)} ↗
+            </a>
+            <div className="mt-4 border border-line bg-black/50 p-3">
+              <div className="label">Your balance</div>
+              <div className="stat mt-1 text-xl font-bold text-white">
+                {address ? (
+                  balance !== undefined ? (
+                    `${Number(formatUnits(balance, 18)).toLocaleString()} $${game.tokenSymbol}`
+                  ) : (
+                    "…"
+                  )
+                ) : (
+                  <span className="text-sm text-white/50">Connect wallet to earn</span>
+                )}
+              </div>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2 font-mono text-[11px] text-white/50">
+              <div className="border border-line p-2"><div className="label">Rate</div><div className="mt-0.5 text-white">1 pt = 1 ${game.tokenSymbol}</div></div>
+              <div className="border border-line p-2"><div className="label">Max / run</div><div className="mt-0.5 text-white">1,000</div></div>
+            </div>
+          </div>
+        ) : (
+          <div className="card p-4 text-sm text-white/55">
+            <div className="label">Game token</div>
+            <p className="mt-2">No token launched yet. Scores aren&apos;t rewarded until the creator launches one.</p>
+            {address && game.creator?.toLowerCase() === address.toLowerCase() && (
+              <Link className="btn-primary mt-3 w-full" href={`/create?remix=${game.id}`}>🚀 Launch token</Link>
+            )}
+          </div>
+        )}
+
         <div className="card p-4">
-          <div className="text-xs text-white/40">Made by</div>
-          <div className="font-mono text-sm">
+          <div className="label">Made by</div>
+          <div className="mt-1 font-mono text-sm">
             {game.creator ? (
-              <a className="underline" href={EXPLORER.address(game.creator)} target="_blank" rel="noreferrer">
-                {shortAddr(game.creator)}
+              <a className="text-monad-light hover:text-cyan" href={EXPLORER.address(game.creator)} target="_blank" rel="noreferrer">
+                {shortAddr(game.creator)} ↗
               </a>
             ) : (
               "anon"
             )}
           </div>
-          <div className="mt-2 text-sm text-white/50">▶ {game.plays} plays · {game.templateId}</div>
-          <p className="mt-2 line-clamp-3 text-sm italic text-white/50">“{game.prompt}”</p>
-          <div className="mt-3 grid grid-cols-2 gap-2">
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            <span className="chip border-monad/60 text-monad-light">{game.templateId}</span>
+            <span className="chip border-pink/50 text-pink">▶ {game.plays} plays</span>
+          </div>
+          <p className="mt-3 line-clamp-3 font-mono text-xs text-white/45">&gt; {game.prompt}</p>
+          <div className="mt-4 grid grid-cols-2 gap-2">
             <button
               className="btn-ghost"
               onClick={() => {
@@ -161,38 +206,11 @@ export default function GamePage() {
                 setTimeout(() => setCopied(false), 1500);
               }}
             >
-              {copied ? "✅ Copied" : "🔗 Share"}
+              {copied ? "✓ Copied" : "🔗 Share"}
             </button>
             <Link className="btn-ghost" href={`/create?remix=${game.id}`}>🔁 Remix</Link>
           </div>
         </div>
-        {token ? (
-          <div className="card p-4">
-            <div className="text-xs text-white/40">Game token</div>
-            <div className="text-2xl font-black text-monad-light">${game.tokenSymbol}</div>
-            <a className="text-xs text-white/60 underline" href={EXPLORER.address(token)} target="_blank" rel="noreferrer">
-              {shortAddr(token)} ↗
-            </a>
-            <div className="mt-3 rounded-xl bg-black/30 p-3">
-              <div className="text-xs text-white/40">Your balance</div>
-              <div className="text-lg font-bold">
-                {address
-                  ? balance !== undefined
-                    ? `${Number(formatUnits(balance, 18)).toLocaleString()} $${game.tokenSymbol}`
-                    : "…"
-                  : "Connect wallet"}
-              </div>
-            </div>
-            <p className="mt-2 text-xs text-white/40">1 point = 1 ${game.tokenSymbol} (max 1000 per game).</p>
-          </div>
-        ) : (
-          <div className="card p-4 text-sm text-white/50">
-            No token launched yet.{" "}
-            {address && game.creator?.toLowerCase() === address.toLowerCase() && (
-              <Link className="text-monad-light underline" href={`/create?remix=${game.id}`}>Launch one</Link>
-            )}
-          </div>
-        )}
       </aside>
       <RewardToast toast={toast} onClose={() => setToast(null)} />
     </div>

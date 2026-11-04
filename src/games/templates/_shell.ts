@@ -10,15 +10,17 @@ const BASE_CSS = String.raw`
 html,body{width:100%;height:100%;overflow:hidden;background:var(--bg,#0E0B1A);color:var(--fg,#fff);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;touch-action:none;user-select:none;-webkit-user-select:none;overscroll-behavior:none}
 #cv{position:fixed;inset:0;width:100%;height:100%;display:block}
 #hud{position:fixed;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:10px 14px;pointer-events:none;z-index:5;font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,.6)}
-#hudTitle{font-size:14px;opacity:.85;max-width:60%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-#hudScore{font-size:24px;color:var(--a)}
-#ov{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(5,3,15,.72);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:20;text-align:center;padding:24px}
+#hudTitle{font-size:12px;opacity:.8;max-width:60%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;text-transform:uppercase;letter-spacing:.14em}
+#hudScore{font-size:24px;color:var(--a);font-family:ui-monospace,Menlo,Consolas,monospace;text-shadow:0 0 10px var(--a)}
+#ov{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:radial-gradient(circle at 50% 40%,rgba(131,110,249,.28),rgba(5,3,15,.86) 70%);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:20;text-align:center;padding:24px}
+#ov::after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(to bottom,rgba(255,255,255,.035) 0 1px,transparent 1px 3px)}
 #ov.hide{display:none}
-#ovEmoji{font-size:64px;line-height:1}
-#ovTitle{font-size:30px;font-weight:800;color:var(--fg);max-width:420px}
-#ovSub{font-size:16px;opacity:.85;max-width:340px;line-height:1.45;white-space:pre-line}
-#ovBtn{font-size:20px;font-weight:700;padding:14px 36px;border:0;border-radius:999px;background:var(--p);color:#fff;cursor:pointer;box-shadow:0 0 28px var(--p);font-family:inherit}
+#ovEmoji{font-size:64px;line-height:1;filter:drop-shadow(0 0 18px var(--p))}
+#ovTitle{font-size:28px;font-weight:900;color:var(--fg);max-width:420px;text-transform:uppercase;letter-spacing:.06em;text-shadow:2px 0 rgba(46,242,255,.7),-2px 0 rgba(255,61,214,.7),0 0 24px var(--p)}
+#ovSub{font-size:15px;opacity:.8;max-width:340px;line-height:1.45;white-space:pre-line}
+#ovBtn{position:relative;z-index:1;font-size:16px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;padding:14px 34px;border:0;border-radius:0;clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px);background:linear-gradient(135deg,var(--p),#ff3dd6);color:#fff;cursor:pointer;box-shadow:0 0 28px var(--p);font-family:inherit;animation:mgpulse 1.4s ease-in-out infinite}
 #ovBtn:active{transform:scale(.96)}
+@keyframes mgpulse{50%{filter:brightness(1.25)}}
 `;
 
 const BASE_JS = String.raw`

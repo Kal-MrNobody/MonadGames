@@ -34,7 +34,8 @@ export default function MyGames() {
     return (
       <div className="card mx-auto mt-12 max-w-md p-8 text-center">
         <div className="text-5xl">👛</div>
-        <h1 className="mt-3 text-xl font-bold">Connect to see your games</h1>
+        <div className="mt-4 font-pixel text-[10px] text-pink blink">PLAYER 1</div>
+        <h1 className="mt-3 font-display text-xl font-black uppercase">Connect to open your vault</h1>
         <p className="mt-1 text-sm text-white/50">Games you create and tokens you earn show up here.</p>
         <div className="mt-5 flex justify-center"><WalletButton /></div>
       </div>
@@ -49,7 +50,10 @@ export default function MyGames() {
     <div className="space-y-10 pt-4">
       <section>
         <div className="mb-3 flex items-end justify-between">
-          <h1 className="text-2xl font-bold">🛠️ My games</h1>
+          <div>
+            <div className="label text-cyan/80">{"// "}vault</div>
+            <h1 className="mt-1 font-display text-2xl font-black uppercase tracking-wide">My games</h1>
+          </div>
           <Link href="/create" className="btn-primary">✨ New game</Link>
         </div>
         {games === null ? (
@@ -62,7 +66,8 @@ export default function MyGames() {
       </section>
 
       <section>
-        <h2 className="mb-3 text-xl font-bold">🪙 My game tokens</h2>
+        <div className="label mb-1 text-cyan/80">{"// "}inventory</div>
+        <h2 className="mb-3 font-display text-xl font-black uppercase tracking-wide">Game tokens</h2>
         {held.length === 0 ? (
           <div className="card p-6 text-sm text-white/50">No game tokens yet — play a game with a token to start earning.</div>
         ) : (
@@ -70,10 +75,10 @@ export default function MyGames() {
             {held.map(({ g, bal }) => (
               <div key={g.id} className="flex items-center gap-3 p-3">
                 <div className="min-w-0 flex-1">
-                  <Link href={`/game/${g.id}`} className="font-semibold hover:underline">${g.tokenSymbol}</Link>
+                  <Link href={`/game/${g.id}`} className="font-display font-bold text-cyan hover:underline">${g.tokenSymbol}</Link>
                   <div className="truncate text-xs text-white/50">{g.title} · <a className="underline" href={EXPLORER.address(g.tokenAddress!)} target="_blank" rel="noreferrer">{shortAddr(g.tokenAddress)}</a></div>
                 </div>
-                <div className="text-right font-mono text-sm">{Number(formatUnits(bal, 18)).toLocaleString()}</div>
+                <div className="stat text-right text-base font-bold text-mint">{Number(formatUnits(bal, 18)).toLocaleString()}</div>
               </div>
             ))}
           </div>

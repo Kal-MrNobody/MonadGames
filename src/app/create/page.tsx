@@ -6,9 +6,45 @@ import { useAccount } from "wagmi";
 import { api } from "@/lib/api";
 import type { GameRecord } from "@/lib/types";
 import { GameFrame } from "@/components/GameFrame";
+import { GameCabinet } from "@/components/GameCabinet";
+import { PromptConsole } from "@/components/PromptConsole";
 import { LaunchTokenPanel } from "@/components/LaunchTokenPanel";
 
-const LOADING = ["🧠 Dreaming up mechanics…", "🎨 Painting pixels…", "⚙️ Wiring the physics…", "🪙 Minting vibes…", "🚀 Almost ready…"];
+const BOOT = [
+  "parsing prompt",
+  "selecting game engine",
+  "generating theme + palette",
+  "tuning physics + difficulty",
+  "minting vibes",
+  "injecting score bridge",
+  "booting cabinet",
+];
+
+function BootScreen() {
+  const [n, setN] = useState(1);
+  useEffect(() => {
+    const t = setInterval(() => setN((x) => Math.min(x + 1, BOOT.length)), 650);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <div className="absolute inset-0 flex flex-col justify-end bg-black p-5 font-mono text-[12px] leading-relaxed text-mint">
+      <div className="pointer-events-none absolute inset-0 grid place-items-center">
+        <div className="floaty text-7xl opacity-90 drop-shadow-[0_0_30px_rgba(131,110,249,.9)]">🕹️</div>
+      </div>
+      <div className="relative">
+        {BOOT.slice(0, n).map((l, i) => (
+          <div key={l}>
+            <span className="text-monad-light">[{String(i + 1).padStart(2, "0")}]</span> {l}
+            {i < n - 1 ? <span className="text-cyan"> ··· ok</span> : <span className="blink text-pink"> █</span>}
+          </div>
+        ))}
+        <div className="mt-3 h-1 w-full overflow-hidden bg-white/10">
+          <div className="h-full bg-gradient-to-r from-cyan via-monad to-pink transition-all duration-500" style={{ width: `${(n / BOOT.length) * 100}%` }} />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function CreateInner() {
   const params = useSearchParams();
@@ -17,16 +53,10 @@ function CreateInner() {
   const [remixPrompt, setRemixPrompt] = useState("");
   const [game, setGame] = useState<GameRecord | null>(null);
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState(0);
   const [err, setErr] = useState<string | null>(null);
   const [score, setScore] = useState(0);
+  const [best, setBest] = useState(0);
   const started = useRef(false);
-
-  useEffect(() => {
-    if (!loading) return;
-    const t = setInterval(() => setStep((s) => (s + 1) % LOADING.length), 1400);
-    return () => clearInterval(t);
-  }, [loading]);
 
   // ?remix=<id> loads an existing game as the base
   useEffect(() => {
@@ -43,7 +73,8 @@ function CreateInner() {
 
   async function generate(p = prompt) {
     if (!p.trim()) return;
-    setLoading(true); setErr(null); setStep(0); setScore(0);
+    setPrompt(p);
+    setLoading(true); setErr(null); setScore(0); setBest(0);
     try {
       const { game } = await api.generate(p.trim(), address);
       setGame(game);
@@ -53,7 +84,7 @@ function CreateInner() {
 
   async function remix() {
     if (!game || !remixPrompt.trim()) return;
-    setLoading(true); setErr(null); setStep(0); setScore(0);
+    setLoading(true); setErr(null); setScore(0); setBest(0);
     try {
       const { game: g } = await api.remix(game.id, remixPrompt.trim());
       setGame(g); setRemixPrompt("");
@@ -61,67 +92,73 @@ function CreateInner() {
     finally { setLoading(false); }
   }
 
+  const onOver = (s: number) => { setScore(s); setBest((b) => Math.max(b, s)); };
+
   return (
     <div className="grid gap-6 pt-4 lg:grid-cols-[minmax(0,1fr)_380px]">
-      <div className="space-y-4">
-        <div className="card p-3">
-          <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={3}
-            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); generate(); } }}
-            placeholder="Describe your game idea…" className="w-full resize-none bg-transparent p-2 outline-none placeholder:text-white/30" />
-          <div className="flex justify-end">
-            <button className="btn-primary" onClick={() => generate()} disabled={loading || !prompt.trim()}>
-              {loading ? "Generating…" : game ? "✨ Generate new" : "✨ Generate"}
-            </button>
-          </div>
+      <div className="space-y-5">
+        <div>
+          <div className="label text-cyan/80">{"// "}game forge</div>
+          <h1 className="mt-1 font-display text-2xl font-black uppercase tracking-wide">Build a game</h1>
         </div>
-        {err && <div className="card border-red-400/40 p-3 text-sm text-red-300">⚠️ {err}</div>}
+        <PromptConsole value={prompt} onChange={setPrompt} onSubmit={(p) => generate(p)} busy={loading} cta={game ? "Regenerate" : "Generate"} />
+        {err && <div className="card border-red-400/50 p-3 text-sm text-red-300">⚠ {err}</div>}
 
-        <div className="mx-auto aspect-[9/16] max-h-[75vh] w-full max-w-md">
+        <GameCabinet title={loading ? "Compiling…" : game?.title || "Insert idea"} score={game ? score : undefined} best={game ? best : undefined}
+          token={game?.tokenAddress ? game.tokenSymbol : undefined}>
           {loading ? (
-            <div className="card glow grid h-full place-items-center p-6 text-center">
+            <BootScreen />
+          ) : game ? (
+            <GameFrame key={game.id + game.html.length} html={game.html} title={game.title} onScore={setScore} onGameOver={onOver} />
+          ) : (
+            <div className="absolute inset-0 grid place-items-center p-6 text-center">
               <div>
-                <div className="floaty text-6xl">🎮</div>
-                <div className="mt-4 text-lg font-semibold">{LOADING[step]}</div>
-                <div className="mx-auto mt-4 h-1.5 w-48 overflow-hidden rounded-full bg-white/10">
-                  <div className="h-full w-1/2 animate-pulse rounded-full bg-monad" />
-                </div>
+                <div className="text-6xl">👾</div>
+                <div className="mt-5 font-pixel text-[11px] text-pink blink">INSERT IDEA</div>
+                <p className="mt-3 text-sm text-white/45">Your game boots up on this screen.</p>
               </div>
             </div>
-          ) : game ? (
-            <GameFrame key={game.id + game.html.length} html={game.html} title={game.title} onScore={setScore} onGameOver={setScore} />
-          ) : (
-            <div className="card grid h-full place-items-center p-6 text-center text-white/50">
-              <div><div className="text-5xl">🕹️</div><p className="mt-3">Your game preview appears here</p></div>
-            </div>
           )}
-        </div>
+        </GameCabinet>
       </div>
 
-      <aside className="space-y-4">
+      <aside className="space-y-4 lg:pt-[70px]">
         {game ? (
           <>
-            <div className="card p-4">
-              <div className="text-xs text-white/40">Preview</div>
-              <h2 className="text-xl font-bold">{game.title}</h2>
-              <div className="mt-1 text-sm text-white/50">Template: {game.templateId} · Score: <span className="text-monad-light">{score}</span></div>
-              <Link href={`/game/${game.id}`} className="btn-primary mt-3 w-full">▶ Play full screen</Link>
+            <div className="card-neon p-4">
+              <div className="label">Cartridge</div>
+              <h2 className="mt-1 font-display text-xl font-black uppercase">{game.title}</h2>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                <span className="chip border-monad/60 text-monad-light">{game.templateId}</span>
+                {game.tokenSymbol && <span className="chip border-cyan/60 text-cyan">${game.tokenSymbol}</span>}
+              </div>
+              <p className="mt-3 line-clamp-3 font-mono text-xs text-white/45">&gt; {game.prompt}</p>
+              <Link href={`/game/${game.id}`} className="btn-cyan mt-4 w-full">▶ Play full screen</Link>
             </div>
             <div className="card p-4">
-              <h3 className="mb-2 font-semibold">🔁 Remix</h3>
-              <input className="input" value={remixPrompt} onChange={(e) => setRemixPrompt(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && remix()} placeholder="Make it faster, add lava, pink theme…" />
+              <h3 className="font-display text-sm font-bold uppercase tracking-wider">🔁 Remix</h3>
+              <p className="mt-1 text-xs text-white/45">Tweak it with words: faster, lava level, pink theme…</p>
+              <input className="input mt-3" value={remixPrompt} onChange={(e) => setRemixPrompt(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && remix()} placeholder="make it harder + add lasers" />
               <button className="btn-ghost mt-2 w-full" onClick={remix} disabled={loading || !remixPrompt.trim()}>Remix this game</button>
             </div>
             <LaunchTokenPanel game={game} onLaunched={setGame} />
           </>
         ) : (
-          <div className="card p-4 text-sm text-white/60">
-            <h3 className="mb-2 font-semibold text-white">How it works</h3>
-            <ol className="list-decimal space-y-1 pl-5">
-              <li>Describe a game idea</li>
-              <li>AI builds a playable mini-game</li>
-              <li>Launch your own ERC20 token on Monad</li>
-              <li>Players earn your token for every point</li>
+          <div className="card p-5 text-sm text-white/60">
+            <h3 className="font-display text-sm font-bold uppercase tracking-wider text-white">How it works</h3>
+            <ol className="mt-3 space-y-3">
+              {[
+                ["01", "Describe any game idea"],
+                ["02", "AI picks an engine and themes it"],
+                ["03", "Launch your ERC20 on Monad"],
+                ["04", "Players earn your token per point"],
+              ].map(([n, t]) => (
+                <li key={n} className="flex gap-3">
+                  <span className="font-pixel text-[10px] leading-5 text-pink">{n}</span>
+                  <span>{t}</span>
+                </li>
+              ))}
             </ol>
           </div>
         )}
@@ -132,7 +169,7 @@ function CreateInner() {
 
 export default function CreatePage() {
   return (
-    <Suspense fallback={<div className="p-8 text-center text-white/50">Loading…</div>}>
+    <Suspense fallback={<div className="p-8 text-center font-mono text-white/50">loading…</div>}>
       <CreateInner />
     </Suspense>
   );

@@ -25,7 +25,7 @@ export function WalletButton() {
             if (!c) return alert("No browser wallet found. Install MetaMask, Rabby or Phantom.");
             connect({ connector: c, chainId: monadTestnet.id });
           }}>
-          {isPending ? "Connecting…" : "🔌 Connect"}
+          {isPending ? "…" : <>🔌<span className="hidden sm:inline">Connect</span></>}
         </button>
         {error && <span className="mt-1 max-w-48 truncate text-[10px] text-red-300">{error.message.split("\n")[0]}</span>}
       </div>
@@ -34,9 +34,9 @@ export function WalletButton() {
 
   if (chainId !== monadTestnet.id) {
     return (
-      <button className="btn bg-amber-500/90 text-black hover:bg-amber-400" disabled={switching}
+      <button className="btn bg-amber text-black hover:brightness-110" disabled={switching}
         onClick={() => switchChain({ chainId: monadTestnet.id })}>
-        {switching ? "Switching…" : "⚠️ Switch to Monad"}
+        {switching ? "…" : <>⚠️<span className="hidden sm:inline">Switch to Monad</span><span className="sm:hidden">Monad</span></>}
       </button>
     );
   }

@@ -9,6 +9,11 @@ import { injectBridge } from "./bridge";
 const DIR = path.join(process.cwd(), ".data");
 const FILE = path.join(DIR, "games.json");
 
+// Live Monad testnet deployment (contracts/deployments/monadTestnet.json)
+const LIVE_FACTORY = "0xd639772dcf6bcc924d075df0e9c66e4ed2de99d4";
+const LIVE_DEMO_TOKEN = "0xd7D23bF713C3C9473858C182Fc94a75553eB470A";
+const LIVE_DEPLOYER = "0xC07d95248860eD400A3964154e9169903Cbfa8ce" as const;
+
 let cache: GameRecord[] | null = null;
 let fsWritable = true;
 
@@ -20,13 +25,26 @@ function seed(): GameRecord[] {
     ["shooter", "Mempool Invaders", "space shooter blasting MEV bots", { enemyEmojis: ["🤖", "👾", "🦠"], tokenSymbol: "MEV", primaryColor: "#A0055D" }],
   ];
   const now = Date.now();
-  return demos.map(([tid, title, prompt, extra], i) => {
+  const games = demos.map(([tid, title, prompt, extra], i) => {
     const t = getTemplate(tid)!;
     const g = buildGameRecord(t, prompt, { ...t.defaultConfig, ...extra, title });
     g.createdAt = now - (i + 1) * 60_000;
     g.plays = [42, 17, 63, 28][i];
     return g;
   });
+  // On the live testnet deployment, the first demo is wired to the token minted by `DEMO=1 npm run deploy:monad`,
+  // so a fresh checkout has a game that pays real rewards.
+  const factory = (process.env.NEXT_PUBLIC_FACTORY_ADDRESS || "").toLowerCase();
+  const demoToken = process.env.DEMO_TOKEN_ADDRESS || (factory === LIVE_FACTORY ? LIVE_DEMO_TOKEN : undefined);
+  if (demoToken && /^0x[0-9a-fA-F]{40}$/.test(demoToken)) {
+    const g = games[0];
+    g.id = "demo-flappy";
+    g.tokenAddress = demoToken as `0x${string}`;
+    g.tokenSymbol = "FLAP";
+    g.config = { ...g.config, tokenSymbol: "FLAP" };
+    g.creator = LIVE_DEPLOYER;
+  }
+  return games;
 }
 
 function persist() {
