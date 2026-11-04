@@ -1,15 +1,17 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { EXPLORER } from "@/lib/chain";
 
 export interface ToastData { kind: "success" | "info" | "error"; title: string; body?: string; txHash?: string }
 
 export function RewardToast({ toast, onClose }: { toast: ToastData | null; onClose: () => void }) {
+  const close = useRef(onClose);
+  close.current = onClose;
   useEffect(() => {
     if (!toast) return;
-    const t = setTimeout(onClose, 9000);
+    const t = setTimeout(() => close.current(), toast.kind === "info" && toast.title.startsWith("Sending") ? 30000 : 9000);
     return () => clearTimeout(t);
-  }, [toast, onClose]);
+  }, [toast]);
   if (!toast) return null;
   const ring = toast.kind === "success" ? "border-emerald-400/50" : toast.kind === "error" ? "border-red-400/50" : "border-monad/50";
   return (

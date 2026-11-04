@@ -1,3 +1,4 @@
+import { defineChain } from "viem";
 import { monadTestnet as baseMonad } from "viem/chains";
 
 export const MONAD_RPC_URL =
@@ -5,11 +6,12 @@ export const MONAD_RPC_URL =
 
 export const EXPLORER_URL = "https://testnet.monadexplorer.com";
 
-export const monadTestnet = {
+// viem ships monadTestnet (id 10143); we override RPC from env.
+export const monadTestnet = defineChain({
   ...baseMonad,
   rpcUrls: { default: { http: [MONAD_RPC_URL] } },
   blockExplorers: { default: { name: "Monad Explorer", url: EXPLORER_URL } },
-} as const satisfies typeof baseMonad;
+});
 
 export const EXPLORER = {
   tx: (hash: string) => `${EXPLORER_URL}/tx/${hash}`,
