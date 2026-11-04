@@ -26,6 +26,21 @@ cp .env.sample .env.local   # fill in values
 npm run dev
 ```
 
+## Live deployment (Monad testnet, chain 10143)
+
+| Contract | Address |
+|---|---|
+| `GameFactory` | [`0xd639772dCF6bcc924D075dF0E9c66e4ed2De99d4`](https://testnet.monadexplorer.com/address/0xd639772dCF6bcc924D075dF0E9c66e4ed2De99d4) |
+| Rewarder / owner | `0xC07d95248860eD400A3964154e9169903Cbfa8ce` |
+| Demo game token (`demo-flappy`, $FLAP) | [`0xd7D23bF713C3C9473858C182Fc94a75553eB470A`](https://testnet.monadexplorer.com/address/0xd7D23bF713C3C9473858C182Fc94a75553eB470A) |
+
+Full record: `contracts/deployments/monadTestnet.json`. To point the app at it:
+
+```bash
+NEXT_PUBLIC_FACTORY_ADDRESS=0xd639772dCF6bcc924D075dF0E9c66e4ed2De99d4
+REWARDER_PRIVATE_KEY=<deployer key>
+```
+
 ## Deploy contracts to Monad testnet
 
 ```bash
