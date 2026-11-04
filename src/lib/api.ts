@@ -26,5 +26,5 @@ export const api = {
 };
 
 export const TEMPLATE_ICONS: Record<string, string> = {
-  flappy: "🐤", snake: "🐍", runner: "🏃", tap: "👆", breakout: "🧱", memory: "🧠", dodge: "☄️", clicker: "🖱️", "2048": "🔢", jumper: "🦘",
+  flappy: "🐤", snake: "🐍", runner: "🏃", tap: "👆", racer: "🏎️", shooter: "🚀", memory: "🧠", puzzle: "🧩", word: "🔤", catcher: "🧺",
 };

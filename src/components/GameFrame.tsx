@@ -36,7 +36,7 @@ export function GameFrame({ html, title = "game", className = "", onReady, onSco
       title={title}
       sandbox="allow-scripts"
       srcDoc={html}
-      className={`block h-full w-full rounded-2xl border border-line bg-black ${className}`}
+      className={`screen-on block h-full w-full bg-black ${className}`}
     />
   );
 }
