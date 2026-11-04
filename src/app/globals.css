@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+@theme {
+  --color-monad: #836ef9;
+  --color-monad-light: #a594ff;
+  --color-monad-dark: #5b45d6;
+  --color-ink: #0b0914;
+  --color-panel: #15121f;
+  --color-line: #2a2440;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Inter, sans-serif;
+}
+
+html, body { background: var(--color-ink); color: #ece9f7; }
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(1200px 600px at 10% -10%, rgba(131,110,249,0.25), transparent 60%),
+    radial-gradient(900px 500px at 110% 10%, rgba(200,80,255,0.12), transparent 60%),
+    var(--color-ink);
+  background-attachment: fixed;
+}
+
+.glow { box-shadow: 0 0 0 1px rgba(131,110,249,0.35), 0 10px 40px -10px rgba(131,110,249,0.55); }
+@layer components {
+  .card { @apply rounded-2xl border border-line bg-panel/80 backdrop-blur; }
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed; }
+  .btn-primary { @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed bg-monad text-white hover:bg-monad-light; box-shadow: 0 0 0 1px rgba(131,110,249,0.35), 0 10px 40px -10px rgba(131,110,249,0.55); }
+  .btn-ghost { @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed border border-line bg-white/5 text-white hover:bg-white/10; }
+  .input { @apply w-full rounded-xl border border-line bg-black/40 px-3 py-2.5 text-sm text-white placeholder:text-white/30 outline-none focus:border-monad focus:ring-2 focus:ring-monad/30; }
+}
+.gradient-text { background: linear-gradient(90deg, #fff, #a594ff 60%, #e08cff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+@keyframes floaty { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-8px) } }
+.floaty { animation: floaty 2.4s ease-in-out infinite; }
+@keyframes slidein { from { transform: translateY(20px); opacity: 0 } to { transform: none; opacity: 1 } }
+.slidein { animation: slidein .3s ease-out; }
